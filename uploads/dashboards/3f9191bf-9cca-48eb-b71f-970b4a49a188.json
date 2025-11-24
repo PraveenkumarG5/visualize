@@ -1,0 +1,46 @@
+{
+  "id" : "3f9191bf-9cca-48eb-b71f-970b4a49a188",
+  "name" : "My Dashboard",
+  "user" : "admin",
+  "createdAt" : "2025-11-14T10:37:26.074705",
+  "updatedAt" : "2025-11-14T10:53:22.5287226",
+  "layout" : {
+    "1763113100330" : "{\"w\":6,\"h\":4,\"x\":0,\"y\":0,\"i\":\"1763113100330\",\"moved\":false,\"static\":false}",
+    "1763113131171" : "{\"w\":6,\"h\":4,\"x\":0,\"y\":4,\"i\":\"1763113131171\",\"moved\":false,\"static\":false}",
+    "1763113529160" : "{\"w\":6,\"h\":4,\"x\":6,\"y\":0,\"i\":\"1763113529160\",\"moved\":false,\"static\":false}"
+  },
+  "widgets" : [ {
+    "id" : "1763113100330",
+    "type" : "pie",
+    "dataSource" : "open",
+    "title" : "Open Requirement by Location",
+    "columns" : null,
+    "groupBy" : [ "Location" ],
+    "operation" : "count",
+    "valueColumn" : null,
+    "filters" : { },
+    "options" : null
+  }, {
+    "id" : "1763113131171",
+    "type" : "bar",
+    "dataSource" : "release",
+    "title" : "Release List By Onsite/Offshore",
+    "columns" : null,
+    "groupBy" : [ "Onsite/Offshore" ],
+    "operation" : "count",
+    "valueColumn" : null,
+    "filters" : { },
+    "options" : null
+  }, {
+    "id" : "1763113529160",
+    "type" : "pie",
+    "dataSource" : "open",
+    "title" : "Requirements by Status",
+    "columns" : null,
+    "groupBy" : [ "Status" ],
+    "operation" : "count",
+    "valueColumn" : null,
+    "filters" : { },
+    "options" : null
+  } ]
+}
