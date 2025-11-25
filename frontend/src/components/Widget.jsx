@@ -100,7 +100,7 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
               <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="value" fill="#8884d8" />
+              <Bar dataKey="value" fill="#8884d8" label={{ position: 'top' }} />
             </BarChart>
           </ResponsiveContainer>
         )
@@ -112,7 +112,8 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
               <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="value" stroke="#8884d8" />
+              <Legend />
+              <Line type="monotone" dataKey="value" stroke="#8884d8" label={true} />
             </LineChart>
           </ResponsiveContainer>
         )
