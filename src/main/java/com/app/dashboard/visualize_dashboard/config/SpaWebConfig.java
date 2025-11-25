@@ -18,9 +18,9 @@ public class SpaWebConfig implements WebMvcConfigurer {
 
     @Override
     public void addViewControllers(@NonNull ViewControllerRegistry registry) {
-        registry.addViewController("/").setViewName("forward:/index.html");
-        registry.addViewController("/{x:[\\w-]+}").setViewName("forward:/index.html");
-        registry.addViewController("/{x:^(?!api$).*$}/**/{y:[\\w-]+}").setViewName("forward:/index.html");
+        // Forward all paths that do not contain a dot to the index.html
+        registry.addViewController("/{path:[^\\.]*}")
+                .setViewName("forward:/index.html");
     }
 
     @Override
