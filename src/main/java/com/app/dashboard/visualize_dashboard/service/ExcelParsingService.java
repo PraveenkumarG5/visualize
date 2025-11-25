@@ -95,6 +95,7 @@ public class ExcelParsingService {
         private Map<String, Object> currentRow;
         private int lastColumnIndex = -1;
         private boolean isHeaderRow = true;
+        private final Map<String, Integer> headerNameCounts = new LinkedHashMap<>();
 
         private int getColumnIndex(String cellReference) {
             if (cellReference == null) {
@@ -107,6 +108,7 @@ public class ExcelParsingService {
         public void startRow(int rowNum) {
             if (rowNum == 0) {
                 isHeaderRow = true;
+                headerNameCounts.clear(); // Clear counts for each new header row parsing
             } else {
                 isHeaderRow = false;
                 currentRow = new LinkedHashMap<>();
@@ -140,7 +142,14 @@ public class ExcelParsingService {
             }
 
             if (isHeaderRow) {
-                columns.add(formattedValue);
+                String baseHeader = formattedValue;
+                int count = headerNameCounts.getOrDefault(baseHeader, 0);
+                headerNameCounts.put(baseHeader, count + 1);
+                String uniqueHeader = baseHeader;
+                if (count > 0) {
+                    uniqueHeader = baseHeader + " (" + count + ")";
+                }
+                columns.add(uniqueHeader);
             } else if (currentRow != null && thisCol < columns.size()) {
                 currentRow.put(columns.get(thisCol), formattedValue);
             }

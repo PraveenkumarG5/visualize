@@ -13,13 +13,13 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
     operation: 'count',
     valueColumn: null,
     filters: {},
+    isTitleUserEdited: false,
   })
   const [previewData, setPreviewData] = useState(null)
   const [availableColumns, setAvailableColumns] = useState([])
   const [filterColumn, setFilterColumn] = useState('')
   const [filterValue, setFilterValue] = useState('')
   const [filterValueOptions, setFilterValueOptions] = useState([])
-  const [isTitleManuallyEdited, setIsTitleManuallyEdited] = useState(false)
   const [numericColumns, setNumericColumns] = useState([])
 
   useEffect(() => {
@@ -47,13 +47,13 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
         valueColumn: initialConfig.valueColumn || null,
         filters: initialConfig.filters || {},
         id: initialConfig.id,
+        isTitleUserEdited: initialConfig.isTitleUserEdited || false,
       })
-      setIsTitleManuallyEdited(!!initialConfig.title)
     }
   }, [initialConfig])
 
   useEffect(() => {
-    if (isTitleManuallyEdited) return;
+    if (config.isTitleUserEdited) return;
 
     const generateTitle = () => {
       if (!config.groupBy.length && config.type !== 'number') {
@@ -100,7 +100,7 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
     if (newTitle && newTitle !== config.title) {
         setConfig(prevConfig => ({ ...prevConfig, title: newTitle }));
     }
-  }, [config.dataSource, config.groupBy, config.operation, config.valueColumn, config.filters, config.type, isTitleManuallyEdited, config.title]);
+  }, [config.dataSource, config.groupBy, config.operation, config.valueColumn, config.filters, config.type, config.isTitleUserEdited, config.title]);
 
   useEffect(() => {
     const fetchFilterOptions = async () => {
@@ -233,18 +233,22 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-2">Title</label>
-          <input
-            type="text"
-            value={config.title || ''}
-            onChange={(e) => {
-              setConfig({ ...config, title: e.target.value })
-              setIsTitleManuallyEdited(e.target.value.length > 0)
-            }}
-            placeholder="Widget title (auto-generated)"
-            className="w-full px-4 py-2 border rounded"
-          />
-        </div>
-
+                      <input
+                        type="text"
+                        value={config.title || ''}
+                        onChange={(e) => {
+                          const newTitle = e.target.value
+                          setConfig({
+                            ...config,
+                            title: newTitle,
+                            isTitleUserEdited: newTitle.trim().length > 0, // Set true if user types anything
+                          })
+                        }}
+                        placeholder="Widget title (auto-generated)"
+                        className="w-full px-4 py-2 border rounded"
+                      />
+                  </div>
+          
         <div>
           <label className="block text-sm font-medium mb-2">Data Source</label>
           <select
@@ -405,30 +409,29 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
         <div className="mt-4">
           <h4 className="font-medium mb-2">Preview</h4>
           {renderChart()}
-          {initialConfig ? (
-            <div className="flex gap-2 mt-4">
-              <button
-                onClick={() => onSave && onSave({ ...config, id: initialConfig.id })}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => onCancel && onCancel()}
-                className="flex-1 px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => onAddWidget({ ...config, id: Date.now().toString() })}
-              className="mt-4 w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Add to Dashboard
-            </button>
-          )}
-        </div>
+                      {initialConfig ? (
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => onSave && onSave(config)}
+                          className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          Save Changes
+                        </button>
+                        <button
+                          onClick={() => onCancel && onCancel()}
+                          className="flex-1 px-4 py-2 bg-gray-200 text-black rounded hover:bg-gray-300"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => onAddWidget({ ...config, id: Date.now().toString() })}
+                        className="mt-4 w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Add to Dashboard
+                      </button>
+                    )}        </div>
       </div>
     </div>
   )

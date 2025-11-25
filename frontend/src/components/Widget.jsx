@@ -147,8 +147,17 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
               onChange={(e) => setTitleInput(e.target.value)}
               onBlur={() => {
                 setEditingTitle(false)
-                if (onUpdate && (titleInput || '') !== (config.title || '')) {
-                  onUpdate({ ...config, title: titleInput })
+                if (onUpdate) {
+                  const newTitle = titleInput || ''
+                  const oldTitle = config.title || ''
+                  const wasUserEdited = config.isTitleUserEdited
+
+                  if (newTitle !== oldTitle) {
+                    onUpdate({ ...config, title: newTitle, isTitleUserEdited: true })
+                  } else if (wasUserEdited && newTitle === oldTitle && newTitle === '') {
+                    // If user clears a previously user-edited title, revert to auto-generated
+                    onUpdate({ ...config, title: newTitle, isTitleUserEdited: false })
+                  }
                 }
               }}
               onKeyDown={(e) => {
@@ -170,12 +179,12 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
                 e.stopPropagation()
                 setEditingTitle(true)
               }}
-              onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
-              onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onMouseDown={(e) => { e.stopPropagation(); }}
+              onTouchStart={(e) => { e.stopPropagation(); }}
               className="cursor-pointer"
               title="Click to edit title"
             >
-              {config.title && config.title.trim()
+              {config.isTitleUserEdited && config.title && config.title.trim()
                 ? config.title
                 : (config.groupBy && config.groupBy[0] ? config.groupBy[0] : 'Widget')}
             </span>
