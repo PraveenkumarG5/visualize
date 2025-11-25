@@ -1,5 +1,8 @@
 package com.app.dashboard.visualize_dashboard.service;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.util.IOUtils;
@@ -8,10 +11,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class ExcelParsingService {
@@ -26,19 +36,27 @@ public class ExcelParsingService {
 
     public Map<String, Object> parseExcelFile(String filePath) throws IOException {
         logger.info("Parsing Excel file: {}", filePath);
-        try (FileInputStream fis = new FileInputStream(filePath);
-             Workbook workbook = new XSSFWorkbook(fis)) {
+        try (OPCPackage opcPackage = OPCPackage.open(filePath, PackageAccess.READ);
+             Workbook workbook = new XSSFWorkbook(opcPackage)) {
             return parseWorkbook(workbook);
+        } catch (InvalidFormatException e) {
+            throw new IOException("Failed to parse Excel file", e);
         }
     }
-    
+
     public Map<String, Object> parseExcelFile(InputStream inputStream) throws IOException {
         logger.info("Parsing Excel file from input stream");
-        try (Workbook workbook = new XSSFWorkbook(inputStream)) {
-            return parseWorkbook(workbook);
+        File tempFile = Files.createTempFile("excel-", ".xlsx").toFile();
+        try {
+            Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return parseExcelFile(tempFile.getAbsolutePath());
+        } finally {
+            if (tempFile.exists()) {
+                tempFile.delete();
+            }
         }
     }
-    
+
     private Map<String, Object> parseWorkbook(Workbook workbook) {
         // To prevent memory issues, remove all sheets except the first one
         for (int i = workbook.getNumberOfSheets() - 1; i > 0; i--) {
@@ -81,7 +99,7 @@ public class ExcelParsingService {
         result.put("rows", rows);
         return result;
     }
-    
+
     private String getCellValueAsString(Cell cell) {
         if (cell == null) return "";
         return switch (cell.getCellType()) {
@@ -109,7 +127,7 @@ public class ExcelParsingService {
             default -> "";
         };
     }
-    
+
     private Object getCellValue(Cell cell) {
         if (cell == null) return "";
         return switch (cell.getCellType()) {
