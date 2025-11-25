@@ -93,8 +93,15 @@ public class ExcelParsingService {
         private final List<Map<String, Object>> rows = new ArrayList<>();
         private final List<String> columns = new ArrayList<>();
         private Map<String, Object> currentRow;
-        private int currentCol = 0;
+        private int lastColumnIndex = -1;
         private boolean isHeaderRow = true;
+
+        private int getColumnIndex(String cellReference) {
+            if (cellReference == null) {
+                return -1;
+            }
+            return new org.apache.poi.ss.util.CellReference(cellReference).getCol();
+        }
 
         @Override
         public void startRow(int rowNum) {
@@ -104,27 +111,40 @@ public class ExcelParsingService {
                 isHeaderRow = false;
                 currentRow = new LinkedHashMap<>();
             }
-            currentCol = 0;
+            lastColumnIndex = -1;
         }
 
         @Override
         public void endRow(int rowNum) {
-            if (!isHeaderRow && currentRow != null && !currentRow.isEmpty()) {
-                rows.add(currentRow);
+            if (!isHeaderRow && currentRow != null) {
+                for (int i = lastColumnIndex + 1; i < columns.size(); i++) {
+                    currentRow.put(columns.get(i), "");
+                }
+                if (!currentRow.isEmpty() || !columns.isEmpty()) {
+                    rows.add(currentRow);
+                }
             }
             currentRow = null;
         }
 
         @Override
         public void cell(String cellReference, String formattedValue, XSSFComment comment) {
-            if (isHeaderRow) {
-                columns.add(formattedValue);
-            } else {
-                if (currentRow != null && currentCol < columns.size()) {
-                    currentRow.put(columns.get(currentCol), formattedValue);
+            int thisCol = getColumnIndex(cellReference);
+
+            for (int i = lastColumnIndex + 1; i < thisCol; i++) {
+                if (isHeaderRow) {
+                    columns.add("");
+                } else if (currentRow != null && i < columns.size()) {
+                    currentRow.put(columns.get(i), "");
                 }
             }
-            currentCol++;
+
+            if (isHeaderRow) {
+                columns.add(formattedValue);
+            } else if (currentRow != null && thisCol < columns.size()) {
+                currentRow.put(columns.get(thisCol), formattedValue);
+            }
+            lastColumnIndex = thisCol;
         }
 
         @Override
