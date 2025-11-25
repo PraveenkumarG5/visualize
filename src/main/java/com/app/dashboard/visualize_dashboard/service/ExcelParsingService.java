@@ -38,6 +38,11 @@ public class ExcelParsingService {
     }
     
     private Map<String, Object> parseWorkbook(Workbook workbook) {
+        // To prevent memory issues, remove all sheets except the first one
+        for (int i = workbook.getNumberOfSheets() - 1; i > 0; i--) {
+            workbook.removeSheetAt(i);
+        }
+
         Sheet sheet = workbook.getSheetAt(0);
         List<String> columns = new ArrayList<>();
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -67,7 +72,7 @@ public class ExcelParsingService {
             rows.add(rowData);
         }
         
-        logger.info("Parsed {} rows with {} columns", rows.size(), columns.size());
+        logger.info("Parsed {} rows with {} columns from the first sheet", rows.size(), columns.size());
         
         Map<String, Object> result = new HashMap<>();
         result.put("columns", columns);
