@@ -1,5 +1,6 @@
 package com.app.dashboard.visualize_dashboard.service;
 
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -14,14 +15,15 @@ import java.util.*;
 
 @Service
 public class ExcelParsingService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(ExcelParsingService.class);
 
-    // Set a higher override value for the byte array maximum size
+    // Set a higher override value for the byte array maximum size and a lower minimum inflation ratio
     static {
         IOUtils.setByteArrayMaxOverride(400000000);
+        ZipSecureFile.setMinInflateRatio(0.001);
     }
-    
+
     public Map<String, Object> parseExcelFile(String filePath) throws IOException {
         logger.info("Parsing Excel file: {}", filePath);
         try (FileInputStream fis = new FileInputStream(filePath);
