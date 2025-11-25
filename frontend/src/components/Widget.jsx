@@ -95,9 +95,9 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
       case 'bar':
         return (
           <ResponsiveContainer width="100%" height="100%" minHeight={0}>
-            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 100 }}>
+            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 5, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" />
+              <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" height={60} />
               <YAxis />
               <Tooltip />
               <Bar dataKey="value" fill="#8884d8" label={{ position: 'top' }} />
@@ -105,15 +105,21 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
           </ResponsiveContainer>
         )
       case 'line':
+        const CustomLineLabel = ({ x, y, stroke, value }) => {
+          return (
+            <text x={x} y={y} dy={-10} fill={stroke} fontSize={10} textAnchor="middle">
+              {value}
+            </text>
+          );
+        };
         return (
           <ResponsiveContainer width="100%" height="100%" minHeight={0}>
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 100 }}>
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 5, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" />
+              <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" height={60} />
               <YAxis />
               <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="value" stroke="#8884d8" label={true} />
+              <Line type="monotone" dataKey="value" stroke="#8884d8" label={<CustomLineLabel />} />
             </LineChart>
           </ResponsiveContainer>
         )
