@@ -28,6 +28,7 @@ export const dataService = {
     api.get('/data/sample', { params: { type, limit } }),
   getStatistics: () => api.get('/data/statistics'),
   aggregate: (request) => api.post('/data/aggregate', request),
+  getUniqueValues: (type, column) => api.get('/data/unique-values', { params: { type, column } }),
 }
 
 export const widgetService = {

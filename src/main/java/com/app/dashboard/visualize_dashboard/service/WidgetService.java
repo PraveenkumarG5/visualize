@@ -37,13 +37,19 @@ public class WidgetService {
         
         WidgetPreviewResponse response = new WidgetPreviewResponse();
         
-        @SuppressWarnings("unchecked")
-        List<String> labels = (List<String>) aggregated.get("labels");
-        @SuppressWarnings("unchecked")
-        List<Object> values = (List<Object>) aggregated.get("values");
+        if (aggregated.containsKey("value")) {
+            response.setValues(List.of(aggregated.get("value")));
+            response.setLabels(List.of("Value"));
+        } else {
+            @SuppressWarnings("unchecked")
+            List<String> labels = (List<String>) aggregated.get("labels");
+            @SuppressWarnings("unchecked")
+            List<Object> values = (List<Object>) aggregated.get("values");
+            
+            response.setLabels(labels != null ? labels : List.of());
+            response.setValues(values != null ? values : List.of());
+        }
         
-        response.setLabels(labels != null ? labels : List.of());
-        response.setValues(values != null ? values : List.of());
         response.setRawData(filteredData);
         
         return response;

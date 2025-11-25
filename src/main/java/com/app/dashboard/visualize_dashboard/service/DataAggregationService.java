@@ -131,5 +131,18 @@ public class DataAggregationService {
                 Collectors.counting()
             ));
     }
+
+    public List<Object> getUniqueValues(List<Map<String, Object>> data, String column) {
+        if (data == null || data.isEmpty() || column == null || column.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return data.stream()
+                .map(row -> row.get(column))
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
 }
 

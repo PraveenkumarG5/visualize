@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import hash from 'object-hash'
 
 // useAutoSave: manage a save status state and provide a `save` helper that
 // wraps any async save function. Returns { saveStatus, save, dismiss }
@@ -6,6 +7,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 export default function useAutoSave(debounceMs = 800) {
   const [saveStatus, setSaveStatus] = useState({ status: 'idle', message: '' })
   const timerRef = useRef(null)
+  // Use a stable hash function that is less sensitive to internal object properties
+  // that might change during editing but don't represent a change in value.
+  const stableHash = (value) => hash(value, { respectType: false })
+
   const lastFnRef = useRef(null)
   const pendingRefs = useRef([])
 

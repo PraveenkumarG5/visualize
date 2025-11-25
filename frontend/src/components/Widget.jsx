@@ -39,7 +39,11 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
     setLoading(true)
     setError(null)
     try {
-      const response = await widgetService.preview(config)
+      const payload = { ...config }
+      if (config.type === 'number') {
+        payload.groupBy = []
+      }
+      const response = await widgetService.preview(payload)
       setData(response.data)
     } catch (err) {
       console.error('Error loading widget data:', err)

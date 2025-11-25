@@ -3,11 +3,12 @@
   "name" : "My Dashboard",
   "user" : "admin",
   "createdAt" : "2025-11-14T10:37:26.074705",
-  "updatedAt" : "2025-11-14T10:53:22.5287226",
+  "updatedAt" : "2025-11-24T17:46:06.1740506",
   "layout" : {
     "1763113100330" : "{\"w\":6,\"h\":4,\"x\":0,\"y\":0,\"i\":\"1763113100330\",\"moved\":false,\"static\":false}",
     "1763113131171" : "{\"w\":6,\"h\":4,\"x\":0,\"y\":4,\"i\":\"1763113131171\",\"moved\":false,\"static\":false}",
-    "1763113529160" : "{\"w\":6,\"h\":4,\"x\":6,\"y\":0,\"i\":\"1763113529160\",\"moved\":false,\"static\":false}"
+    "1763113529160" : "{\"w\":6,\"h\":4,\"x\":6,\"y\":0,\"i\":\"1763113529160\",\"moved\":false,\"static\":false}",
+    "1763986560745" : "{\"w\":6,\"h\":4,\"x\":6,\"y\":4,\"i\":\"1763986560745\",\"moved\":false,\"static\":false}"
   },
   "widgets" : [ {
     "id" : "1763113100330",
@@ -41,6 +42,19 @@
     "operation" : "count",
     "valueColumn" : null,
     "filters" : { },
+    "options" : null
+  }, {
+    "id" : "1763986560745",
+    "type" : "pie",
+    "dataSource" : "open",
+    "title" : "Count by Location from Open Requirements (filtered by GDH: 'Michael Roy')",
+    "columns" : null,
+    "groupBy" : [ "Location" ],
+    "operation" : "count",
+    "valueColumn" : null,
+    "filters" : {
+      "GDH" : "Michael Roy"
+    },
     "options" : null
   } ]
 }

@@ -79,5 +79,14 @@ public class DataController {
         
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/unique-values")
+    public ResponseEntity<List<Object>> getUniqueValues(
+            @RequestParam String type,
+            @RequestParam String column) {
+        List<Map<String, Object>> data = fileService.getData(type);
+        List<Object> uniqueValues = aggregationService.getUniqueValues(data, column);
+        return ResponseEntity.ok(uniqueValues);
+    }
 }
 
