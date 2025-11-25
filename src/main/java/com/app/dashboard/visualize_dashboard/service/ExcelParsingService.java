@@ -1,6 +1,7 @@
 package com.app.dashboard.visualize_dashboard.service;
 
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,11 @@ import java.util.*;
 public class ExcelParsingService {
     
     private static final Logger logger = LoggerFactory.getLogger(ExcelParsingService.class);
+
+    // Set a higher override value for the byte array maximum size
+    static {
+        IOUtils.setByteArrayMaxOverride(400000000);
+    }
     
     public Map<String, Object> parseExcelFile(String filePath) throws IOException {
         logger.info("Parsing Excel file: {}", filePath);
