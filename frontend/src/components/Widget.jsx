@@ -71,6 +71,29 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
 
     switch (config.type) {
       case 'pie':
+        const renderLegend = (props) => {
+          const { payload } = props
+          return (
+            <ul className="recharts-default-legend" style={{ padding: 0, margin: 0 }}>
+              {
+                payload.map((entry, index) => (
+                  <li
+                    key={`item-${index}`}
+                    className="recharts-legend-item"
+                    style={{ display: 'block', marginBottom: '4px', whiteSpace: 'nowrap' }}
+                  >
+                    <svg className="recharts-surface" width="14" height="14" viewBox="0 0 32 32" version="1.1" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '4px' }}>
+                      <path stroke="none" fill={entry.color} d="M16,16m-5,0a5,5 0 1,1 10,0a5,5 0 1,1 -10,0" className="recharts-legend-icon"></path>
+                    </svg>
+                    <span className="recharts-legend-item-text" style={{ verticalAlign: 'middle' }}>
+                      {entry.value}: {entry.payload.value}
+                    </span>
+                  </li>
+                ))
+              }
+            </ul>
+          )
+        }
         return (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 5, right: 20, left: 20, bottom: 20 }}>
@@ -88,7 +111,7 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
+              <Legend content={renderLegend} />
             </PieChart>
           </ResponsiveContainer>
         )
@@ -184,7 +207,7 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
               className="cursor-pointer"
               title="Click to edit title"
             >
-              {config.isTitleUserEdited && config.title && config.title.trim()
+              {(config.title && config.title.trim())
                 ? config.title
                 : (config.groupBy && config.groupBy[0] ? config.groupBy[0] : 'Widget')}
             </span>
