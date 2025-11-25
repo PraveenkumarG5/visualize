@@ -68,15 +68,14 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
     switch (config.type) {
       case 'pie':
         return (
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart margin={{ top: 5, right: 20, left: 20, bottom: 20 }}>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={70}
+                outerRadius="80%"
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -85,15 +84,16 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
                 ))}
               </Pie>
               <Tooltip />
+              <Legend />
             </PieChart>
           </ResponsiveContainer>
         )
       case 'bar':
         return (
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={chartData}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={0}>
+            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 100 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+              <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" />
               <YAxis />
               <Tooltip />
               <Bar dataKey="value" fill="#8884d8" />
@@ -102,10 +102,10 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
         )
       case 'line':
         return (
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData}>
+          <ResponsiveContainer width="100%" height="100%" minHeight={0}>
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 100 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+              <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" />
               <YAxis />
               <Tooltip />
               <Line type="monotone" dataKey="value" stroke="#8884d8" />
@@ -133,8 +133,8 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-4 h-full">
-      <div className="flex justify-between items-center mb-2 widget-header">
+    <div className="bg-white rounded-lg shadow p-4 h-full flex flex-col">
+      <div className="flex justify-between items-center mb-2 widget-header flex-shrink-0">
         <h4 className="font-semibold">
           {editingTitle ? (
             <input
@@ -222,7 +222,9 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
           )}
         </div>
       </div>
-      {renderChart()}
+      <div className="flex-grow h-full">
+        {renderChart()}
+      </div>
     </div>
   )
 }
