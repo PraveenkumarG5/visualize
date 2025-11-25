@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { widgetService } from '../services/api'
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, Sector } from 'recharts'
 
 const COLORS = [
   '#4CAF50', '#2196F3', '#FFC107', '#FF5722', '#9C27B0', '#00BCD4', '#FFEB3B', '#8BC34A', '#CDDC39', '#FF4081',
@@ -15,6 +15,7 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleInput, setTitleInput] = useState('')
   const titleInputRef = useRef(null)
+  const [activeIndex, setActiveIndex] = useState(-1); // State to manage active pie slice
 
   useEffect(() => {
     loadData()
@@ -57,6 +58,53 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
     }
   }
 
+  const onPieClick = (_, index) => {
+    setActiveIndex(index === activeIndex ? -1 : index);
+  };
+
+  const renderActiveShape = (props) => {
+    const RADIAN = Math.PI / 180;
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, percent, value } = props;
+    const sin = Math.sin(-RADIAN * midAngle);
+    const cos = Math.cos(-RADIAN * midAngle);
+    const sx = cx + (outerRadius + 10) * cos;
+    const sy = cy + (outerRadius + 10) * sin;
+    const mx = cx + (outerRadius + 20) * cos;
+    const my = cy + (outerRadius + 20) * sin;
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+    const ey = my;
+    const textAnchor = cos >= 0 ? 'start' : 'end';
+
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 10}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={outerRadius + 12}
+          outerRadius={outerRadius + 14}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
+        <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`${value}`}</text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
+          {`(Rate ${(percent * 100).toFixed(2)}%)`}
+        </text>
+      </g>
+    );
+  };
+
   const renderChart = () => {
     if (loading) return <div className="text-center py-8">Loading...</div>
     if (error) return <div className="text-center py-8 text-red-500">{error}</div>
@@ -75,6 +123,8 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 5, right: 20, left: 20, bottom: 20 }}>
               <Pie
+                activeIndex={activeIndex}
+                activeShape={renderActiveShape}
                 data={chartData}
                 cx="50%"
                 cy="50%"
@@ -82,6 +132,7 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
                 outerRadius="80%"
                 fill="#8884d8"
                 dataKey="value"
+                onClick={onPieClick}
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
