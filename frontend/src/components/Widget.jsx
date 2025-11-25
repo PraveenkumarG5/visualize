@@ -2,7 +2,11 @@ import { useEffect, useState, useRef } from 'react'
 import { widgetService } from '../services/api'
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts'
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
+const COLORS = [
+  '#4CAF50', '#2196F3', '#FFC107', '#FF5722', '#9C27B0', '#00BCD4', '#FFEB3B', '#8BC34A', '#CDDC39', '#FF4081',
+  '#795548', '#9E9E9E', '#607D8B', '#E91E63', '#673AB7', '#03A9F4', '#009688', '#FF9800', '#FFCDD2', '#C8E6C9',
+  '#BBDEFB', '#FFECB3', '#FFCCBC', '#E1BEE7', '#B2EBF2', '#DCEDC8', '#F0F4C3', '#F8BBD0', '#D7CCC8', '#F5F5F5'
+]
 
 function Widget({ config, onRemove, onEdit, onUpdate }) {
   const [data, setData] = useState(null)
