@@ -53,6 +53,10 @@ public class WidgetService {
         if (aggregated.containsKey("warning")) {
             response.setWarning((String) aggregated.get("warning"));
         }
+
+        if (aggregated.containsKey("invalidRowNumbers")) {
+            response.setInvalidRowNumbers((List<Integer>) aggregated.get("invalidRowNumbers"));
+        }
         
         response.setRawData(filteredData);
         

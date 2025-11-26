@@ -8,6 +8,7 @@ public class WidgetPreviewResponse {
     private List<Object> values;
     private List<Map<String, Object>> rawData;
     private String warning;
+    private List<Integer> invalidRowNumbers;
     
     // Getters and Setters
     public List<String> getLabels() { return labels; }
@@ -21,5 +22,8 @@ public class WidgetPreviewResponse {
 
     public String getWarning() { return warning; }
     public void setWarning(String warning) { this.warning = warning; }
+
+    public List<Integer> getInvalidRowNumbers() { return invalidRowNumbers; }
+    public void setInvalidRowNumbers(List<Integer> invalidRowNumbers) { this.invalidRowNumbers = invalidRowNumbers; }
 }
 

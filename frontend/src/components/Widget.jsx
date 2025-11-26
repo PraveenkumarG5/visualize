@@ -17,6 +17,13 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
   const titleInputRef = useRef(null)
   const [activeIndex, setActiveIndex] = useState(-1); // State to manage active pie slice
 
+  const valueFormatter = (value) => {
+    if (config.operation === 'revenue_loss' && typeof value === 'number') {
+      return new Intl.NumberFormat('en-US').format(value);
+    }
+    return value;
+  };
+
   useEffect(() => {
     loadData()
   }, [config])
@@ -24,6 +31,12 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
   useEffect(() => {
     setTitleInput(config.title || '')
   }, [config.title])
+
+  useEffect(() => {
+    if (data?.invalidRowNumbers?.length > 0) {
+      console.debug(`Debug: Invalid rows detected in widget "${config.title || 'Untitled'}":`, data.invalidRowNumbers);
+    }
+  }, [data, config.title]);
 
   // focus the input when entering edit mode
   useEffect(() => {
@@ -97,7 +110,7 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
         />
         <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke={fill} fill="none" />
         <circle cx={ex} cy={ey} r={2} fill={fill} stroke="none" />
-        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{`${value}`}</text>
+        <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} textAnchor={textAnchor} fill="#333">{valueFormatter(value)}</text>
         <text x={ex + (cos >= 0 ? 1 : -1) * 12} y={ey} dy={18} textAnchor={textAnchor} fill="#999">
           {`(Rate ${(percent * 100).toFixed(2)}%)`}
         </text>
@@ -116,6 +129,13 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
       name: label,
       value: data.values[index],
     }))
+
+    const BarLabel = ({ x, y, width, value }) => {
+      if (value > 0) {
+        return <text x={x + width / 2} y={y} dy={-4} textAnchor="middle" fill="#666" fontSize="12">{valueFormatter(value)}</text>;
+      }
+      return null;
+    };
 
     switch (config.type) {
       case 'pie':
@@ -138,20 +158,20 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
-              <Legend formatter={(value, entry) => `${value}: ${entry.payload.value}`} />
+              <Tooltip formatter={valueFormatter} />
+              <Legend formatter={(value, entry) => `${value}: ${valueFormatter(entry.payload.value)}`} />
             </PieChart>
           </ResponsiveContainer>
         )
       case 'bar':
         return (
           <ResponsiveContainer width="100%" height="100%" minHeight={0}>
-            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 5, bottom: 60 }}>
+            <BarChart data={chartData} margin={{ top: 20, right: 20, left: 5, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" height={60} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#8884d8" label={{ position: 'top' }} />
+              <YAxis tickFormatter={valueFormatter} />
+              <Tooltip formatter={valueFormatter} />
+              <Bar dataKey="value" fill="#8884d8" label={<BarLabel />} />
             </BarChart>
           </ResponsiveContainer>
         )
@@ -159,7 +179,7 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
         const CustomLineLabel = ({ x, y, stroke, value }) => {
           return (
             <text x={x} y={y} dy={-10} fill={stroke} fontSize={10} textAnchor="middle">
-              {value}
+              {valueFormatter(value)}
             </text>
           );
         };
@@ -168,16 +188,17 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
             <LineChart data={chartData} margin={{ top: 5, right: 20, left: 5, bottom: 60 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" interval={0} angle={-45} textAnchor="end" height={60} />
-              <YAxis />
-              <Tooltip />
+              <YAxis tickFormatter={valueFormatter} />
+              <Tooltip formatter={valueFormatter} />
               <Line type="monotone" dataKey="value" stroke="#8884d8" label={<CustomLineLabel />} />
             </LineChart>
           </ResponsiveContainer>
         )
       case 'number':
+        const rawValue = data.values && data.values[0] ? data.values[0] : (data.value || 0);
         return (
           <div className="text-center py-8">
-            <div className="text-4xl font-bold">{data.values && data.values[0] ? data.values[0] : (data.value || 0)}</div>
+            <div className="text-4xl font-bold">{valueFormatter(rawValue)}</div>
             <div className="text-gray-500 mt-2">{config.groupBy && config.groupBy[0] ? config.groupBy[0] : 'Total'}</div>
           </div>
         )

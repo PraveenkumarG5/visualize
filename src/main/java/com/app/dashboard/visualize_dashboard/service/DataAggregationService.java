@@ -8,9 +8,12 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.apache.poi.ss.usermodel.DateUtil;
 
 @Service
 public class DataAggregationService {
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(DataAggregationService.class);
+
     
     public Map<String, Object> aggregate(List<Map<String, Object>> data, 
                                          List<String> groupBy, 
@@ -161,19 +164,55 @@ public class DataAggregationService {
                 .collect(Collectors.toList());
     }
 
+    private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
+        DateTimeFormatter.ofPattern("M/d/yy"),
+        DateTimeFormatter.ofPattern("MM/dd/yy"),
+        DateTimeFormatter.ofPattern("M/d/yyyy"),
+        DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+        DateTimeFormatter.ofPattern("d-M-yyyy"),
+        DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+        DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
+    );
+
+    private LocalDate parseDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+        String trimmedDateStr = dateStr.trim();
+
+        // 1. Try to parse as a numeric Excel date
+        try {
+            double excelDate = Double.parseDouble(trimmedDateStr);
+            java.util.Date utilDate = DateUtil.getJavaDate(excelDate);
+            return utilDate.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        } catch (NumberFormatException e) {
+            // Not a number, fall through to string parsing
+        }
+
+        // 2. Try to parse using string formatters
+        for (DateTimeFormatter formatter : DATE_FORMATTERS) {
+            try {
+                return LocalDate.parse(trimmedDateStr, formatter);
+            } catch (DateTimeParseException e) {
+                // Try the next format
+            }
+        }
+        return null; // Return null if all formats fail
+    }
+
     private Map<String, Object> calculateRevenueLoss(List<Map<String, Object>> data, List<String> groupBy) {
         if (data == null || data.isEmpty()) {
             return Map.of("labels", List.of(), "values", List.of());
         }
 
         List<Integer> invalidRowNumbers = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
 
         // Handle no grouping - calculate total loss
         if (groupBy == null || groupBy.isEmpty() || groupBy.get(0).isEmpty()) {
             double totalLoss = 0.0;
             for (Map<String, Object> row : data) {
-                totalLoss += calculateRowLoss(row, invalidRowNumbers, formatter);
+                totalLoss += calculateRowLoss(row, invalidRowNumbers);
             }
             
             Map<String, Object> result = new HashMap<>();
@@ -197,7 +236,7 @@ public class DataAggregationService {
         groupedData.forEach((group, rows) -> {
             double totalLoss = 0.0;
             for (Map<String, Object> row : rows) {
-                totalLoss += calculateRowLoss(row, invalidRowNumbers, formatter);
+                totalLoss += calculateRowLoss(row, invalidRowNumbers);
             }
             labels.add(group);
             values.add(totalLoss);
@@ -210,30 +249,45 @@ public class DataAggregationService {
         return result;
     }
 
-    private double calculateRowLoss(Map<String, Object> row, List<Integer> invalidRowNumbers, DateTimeFormatter formatter) {
+    private double calculateRowLoss(Map<String, Object> row, List<Integer> invalidRowNumbers) {
         Object billDateObj = row.get("Expected Billing start date");
         Object billRateObj = row.get("Bill Rate");
+        Integer rowNum = (Integer) row.get("__row_number__");
 
-        if (billDateObj == null || billDateObj.toString().isEmpty() || 
-            billRateObj == null || billRateObj.toString().isEmpty()) {
-            if (row.containsKey("__row_number__")) {
-                invalidRowNumbers.add((Integer) row.get("__row_number__"));
-            }
+        if (billDateObj == null || billDateObj.toString().trim().isEmpty()) {
+            logger.warn("DEBUG: Row {}: 'Expected Billing start date' is empty. Date Value='{}', Bill Rate Value='{}'", rowNum, billDateObj, billRateObj);
+            if (rowNum != null) invalidRowNumbers.add(rowNum);
+            return 0.0;
+        }
+
+        LocalDate startDate = parseDate(billDateObj.toString());
+
+        if (startDate == null) {
+            logger.warn("DEBUG: Row {}: Failed to parse date. Date Value='{}', Bill Rate Value='{}'", rowNum, billDateObj, billRateObj);
+            if (rowNum != null) invalidRowNumbers.add(rowNum);
+            return 0.0;
+        }
+
+        if (billRateObj == null || billRateObj.toString().isEmpty()) {
+            logger.warn("DEBUG: Row {}: 'Bill Rate' is null or empty. Date Value='{}', Bill Rate Value='{}'", rowNum, billDateObj, billRateObj);
+            if (rowNum != null) invalidRowNumbers.add(rowNum);
             return 0.0;
         }
 
         try {
-            LocalDate startDate = LocalDate.parse(billDateObj.toString(), formatter);
-            LocalDate today = LocalDate.now();
             double billRate = parseDouble(billRateObj);
+            LocalDate today = LocalDate.now();
             
             if (startDate.isBefore(today)) {
                 long daysBetween = ChronoUnit.DAYS.between(startDate, today);
                 return daysBetween * billRate;
+            } else {
+                return 0.0; // Date is in the future, no loss yet. Not an error.
             }
-        } catch (DateTimeParseException e) {
-            if (row.containsKey("__row_number__")) {
-                invalidRowNumbers.add((Integer) row.get("__row_number__"));
+        } catch (NumberFormatException e) {
+            logger.warn("DEBUG: Row {}: Failed to parse 'Bill Rate' into a number. Date Value='{}', Bill Rate Value='{}'", rowNum, billDateObj, billRateObj);
+             if (rowNum != null) {
+                invalidRowNumbers.add(rowNum);
             }
         }
         return 0.0;
@@ -241,18 +295,19 @@ public class DataAggregationService {
     
     private void addWarningIfNecessary(Map<String, Object> result, List<Integer> invalidRowNumbers) {
         if (!invalidRowNumbers.isEmpty()) {
-            String rowNumbersString = invalidRowNumbers.stream()
-                                                       .distinct()
+            List<Integer> sortedUniqueInvalidRows = invalidRowNumbers.stream().distinct().sorted().collect(Collectors.toList());
+            
+            String rowNumbersString = sortedUniqueInvalidRows.stream()
                                                        .limit(5)
                                                        .map(String::valueOf)
-                                                       .sorted()
                                                        .collect(Collectors.joining(", "));
-            if (invalidRowNumbers.size() > 5) {
+            if (sortedUniqueInvalidRows.size() > 5) {
                 rowNumbersString += ", ...";
             }
             
-            result.put("warning", "Could not calculate loss for " + invalidRowNumbers.size() + " row(s). " +
+            result.put("warning", "Could not calculate loss for " + sortedUniqueInvalidRows.size() + " row(s). " +
                                 "Data is missing or invalid for rows: " + rowNumbersString);
+            result.put("invalidRowNumbers", sortedUniqueInvalidRows);
         }
     }
 }

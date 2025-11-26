@@ -3,13 +3,14 @@
   "name" : "My Dashboard",
   "user" : "admin",
   "createdAt" : "2025-11-14T10:37:26.074705",
-  "updatedAt" : "2025-11-26T15:58:33.8430185",
+  "updatedAt" : "2025-11-26T17:18:25.8910048",
   "layout" : {
     "1763113100330" : "{\"w\":6,\"h\":4,\"x\":0,\"y\":0,\"i\":\"1763113100330\",\"moved\":false,\"static\":false}",
     "1763113131171" : "{\"w\":6,\"h\":4,\"x\":0,\"y\":4,\"i\":\"1763113131171\",\"moved\":false,\"static\":false}",
     "1763113529160" : "{\"w\":6,\"h\":4,\"x\":6,\"y\":0,\"i\":\"1763113529160\",\"moved\":false,\"static\":false}",
     "1763986560745" : "{\"w\":6,\"h\":4,\"x\":6,\"y\":4,\"i\":\"1763986560745\",\"moved\":false,\"static\":false}",
-    "1764152877695" : "{\"w\":6,\"h\":4,\"x\":0,\"y\":8,\"i\":\"1764152877695\",\"moved\":false,\"static\":false}"
+    "1764152877695" : "{\"w\":6,\"h\":4,\"x\":0,\"y\":8,\"i\":\"1764152877695\",\"moved\":false,\"static\":false}",
+    "1764156291584" : "{\"w\":6,\"h\":4,\"x\":6,\"y\":8,\"i\":\"1764156291584\",\"moved\":false,\"static\":false}"
   },
   "widgets" : [ {
     "id" : "1763113100330",
@@ -59,15 +60,31 @@
     "options" : null
   }, {
     "id" : "1764152877695",
-    "type" : "line",
+    "type" : "pie",
     "dataSource" : "open",
-    "title" : "Revenue Loss by DP from Open Requirements (filtered by CP: 'Rahul Sharma', Status in (Open, Proposed), MOT/Non MOT: 'MOT')",
+    "title" : "Revenue Loss by CP from Open Requirements (filtered by Status in (Open, Proposed), MOT/Non MOT: 'MOT', Qtr: 'Q3')",
     "columns" : null,
-    "groupBy" : [ "DP" ],
+    "groupBy" : [ "CP" ],
+    "operation" : "revenue_loss",
+    "valueColumn" : null,
+    "filters" : {
+      "Status" : [ "Open", "Proposed" ],
+      "MOT/Non MOT" : "MOT",
+      "Qtr" : "Q3"
+    },
+    "options" : null
+  }, {
+    "id" : "1764156291584",
+    "type" : "number",
+    "dataSource" : "open",
+    "title" : "Total Revenue Loss from Open Requirements (filtered by CP: 'Rahul Sharma', Qtr: 'Q3', Status in (Open, Proposed), MOT/Non MOT: 'MOT')",
+    "columns" : null,
+    "groupBy" : [ ],
     "operation" : "revenue_loss",
     "valueColumn" : null,
     "filters" : {
       "CP" : "Rahul Sharma",
+      "Qtr" : "Q3",
       "Status" : [ "Open", "Proposed" ],
       "MOT/Non MOT" : "MOT"
     },

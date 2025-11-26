@@ -122,6 +122,13 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
     }
     fetchFilterOptions()
   }, [filterColumn, config.dataSource])
+
+  useEffect(() => {
+    if (previewData?.invalidRowNumbers?.length > 0) {
+      console.debug('Debug: Invalid rows detected in preview:', previewData.invalidRowNumbers);
+    }
+  }, [previewData]);
+
   const handlePreview = async () => {
     try {
       const payload = { ...config };
@@ -180,6 +187,13 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
     });
   };
 
+  const valueFormatter = (value) => {
+    if (config.operation === 'revenue_loss' && typeof value === 'number') {
+      return new Intl.NumberFormat('en-US').format(value);
+    }
+    return value;
+  };
+
   const renderChart = () => {
     if (!previewData || !previewData.labels || previewData.labels.length === 0) {
       return <div className="text-gray-500 p-8 text-center">No data to display</div>
@@ -209,18 +223,19 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={valueFormatter} />
+              <Legend formatter={(value, entry) => `${value}: ${valueFormatter(entry.payload.value)}`} />
             </PieChart>
           </ResponsiveContainer>
         )
       case 'bar':
         return (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
+            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 5, bottom: 100 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-              <YAxis />
-              <Tooltip />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} interval={0} />
+              <YAxis tickFormatter={valueFormatter} />
+              <Tooltip formatter={valueFormatter} />
               <Legend />
               <Bar dataKey="value" fill="#8884d8" />
             </BarChart>
@@ -229,24 +244,23 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
       case 'line':
         return (
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
+            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 5, bottom: 100 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
-              <YAxis />
-              <Tooltip />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} interval={0} />
+              <YAxis tickFormatter={valueFormatter} />
+              <Tooltip formatter={valueFormatter} />
               <Legend />
               <Line type="monotone" dataKey="value" stroke="#8884d8" />
             </LineChart>
           </ResponsiveContainer>
         )
       case 'number':
+        const rawValue = previewData.values && previewData.values[0] ? previewData.values[0] : 0;
         return (
           <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
             <div className="text-center">
               <div className="text-5xl font-bold text-gray-800">
-                {typeof previewData.values[0] === 'number'
-                  ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(previewData.values[0])
-                  : previewData.values[0]}
+                {valueFormatter(rawValue)}
               </div>
             </div>
           </div>
