@@ -21,6 +21,7 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
   const [filterValue, setFilterValue] = useState('')
   const [filterValueOptions, setFilterValueOptions] = useState([])
   const [numericColumns, setNumericColumns] = useState([])
+  const [multiFilterValues, setMultiFilterValues] = useState(new Set())
 
   useEffect(() => {
     setAvailableColumns(config.dataSource === 'open' ? openColumns : releaseColumns)
@@ -56,44 +57,47 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
     if (config.isTitleUserEdited) return;
 
     const generateTitle = () => {
-      if (!config.groupBy.length && config.type !== 'number') {
-        return '';
-      }
-
-      const op = {
-        count: 'Count',
-        sum: 'Sum',
-        avg: 'Average',
-      }[config.operation];
-
-      let titleParts = [];
-
-      if (config.type === 'number') {
-        if (config.operation === 'count') {
-          titleParts.push('Total Records');
-        } else {
-          titleParts.push(`${op} of ${config.valueColumn || 'Records'}`);
-        }
+      let title = '';
+      if (config.operation === 'revenue_loss') {
+        title = config.groupBy.length ? `Revenue Loss by ${config.groupBy.join(', ')}` : 'Total Revenue Loss';
       } else {
-        if (config.operation === 'count') {
-          titleParts.push(`Count by ${config.groupBy.join(', ')}`);
-        } else {
-          titleParts.push(`${op} of ${config.valueColumn || 'Records'} by ${config.groupBy.join(', ')}`);
+        if (!config.groupBy.length && config.type !== 'number') {
+          return '';
         }
+
+        const op = {
+          count: 'Count',
+          sum: 'Sum',
+          avg: 'Average',
+        }[config.operation];
+
+        let titleParts = [];
+        if (config.type === 'number') {
+          if (config.operation === 'count') {
+            titleParts.push('Total Records');
+          } else {
+            titleParts.push(`${op} of ${config.valueColumn || 'Records'}`);
+          }
+        } else {
+          if (config.operation === 'count') {
+            titleParts.push(`Count by ${config.groupBy.join(', ')}`);
+          } else {
+            titleParts.push(`${op} of ${config.valueColumn || 'Records'} by ${config.groupBy.join(', ')}`);
+          }
+        }
+        title = titleParts.join(' ');
       }
 
       const dataSourceText = config.dataSource === 'open' ? 'Open Requirements' : 'Release List';
-      titleParts.push(`from ${dataSourceText}`);
-
       const filterDetails = Object.entries(config.filters)
-        .map(([key, value]) => `${key}: '${value}'`)
+        .map(([key, value]) => Array.isArray(value) ? `${key} in (${value.join(', ')})` : `${key}: '${value}'`)
         .join(', ');
 
+      let finalTitle = `${title} from ${dataSourceText}`;
       if (filterDetails) {
-        titleParts.push(`(filtered by ${filterDetails})`);
+        finalTitle += ` (filtered by ${filterDetails})`;
       }
-
-      return titleParts.join(' ');
+      return finalTitle;
     };
 
     const newTitle = generateTitle();
@@ -136,21 +140,45 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
   }
 
   const handleAddFilter = () => {
-    if (filterColumn && filterValue) {
-      setConfig({
-        ...config,
-        filters: { ...config.filters, [filterColumn]: filterValue },
-      })
-      setFilterColumn('')
-      setFilterValue('')
+    if (!filterColumn) return;
+
+    let valueToAdd;
+    if (filterColumn === 'Status') {
+      valueToAdd = Array.from(multiFilterValues);
+      if (valueToAdd.length === 0) return;
+    } else {
+      valueToAdd = filterValue;
+      if (!valueToAdd) return;
     }
-  }
+
+    setConfig({
+      ...config,
+      filters: { ...config.filters, [filterColumn]: valueToAdd },
+    });
+
+    // Reset fields
+    setFilterColumn('');
+    setFilterValue('');
+    setMultiFilterValues(new Set());
+  };
 
   const handleRemoveFilter = (key) => {
-    const newFilters = { ...config.filters }
-    delete newFilters[key]
-    setConfig({ ...config, filters: newFilters })
-  }
+    const newFilters = { ...config.filters };
+    delete newFilters[key];
+    setConfig({ ...config, filters: newFilters });
+  };
+  
+  const handleMultiFilterChange = (value, isChecked) => {
+    setMultiFilterValues(prev => {
+        const newSet = new Set(prev);
+        if (isChecked) {
+            newSet.add(value);
+        } else {
+            newSet.delete(value);
+        }
+        return newSet;
+    });
+  };
 
   const renderChart = () => {
     if (!previewData || !previewData.labels || previewData.labels.length === 0) {
@@ -216,7 +244,9 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
           <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
             <div className="text-center">
               <div className="text-5xl font-bold text-gray-800">
-                {previewData.values[0]}
+                {typeof previewData.values[0] === 'number'
+                  ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(previewData.values[0])
+                  : previewData.values[0]}
               </div>
             </div>
           </div>
@@ -288,37 +318,63 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-2">Group By Column</label>
-          <select
-            value={config.groupBy[0] || ""}
-            onChange={(e) => setConfig({ ...config, groupBy: e.target.value ? [e.target.value] : [] })}
-            className="w-full px-4 py-2 border rounded disabled:bg-gray-100"
-            disabled={config.type === 'number'}
-          >
-            <option value="">Select column</option>
-            {availableColumns.map((col) => (
-              <option key={col} value={col}>
-                {col}
-              </option>
-            ))}
-          </select>
-        </div>
+        {config.operation === 'revenue_loss' ? (
+          <div>
+            <label className="block text-sm font-medium mb-2">Group By</label>
+            <select
+              value={config.groupBy[0] || ''}
+              onChange={(e) => setConfig({ ...config, groupBy: e.target.value ? [e.target.value] : [] })}
+              className="w-full px-4 py-2 border rounded"
+            >
+              <option value="">Total</option>
+              {['CP', 'GDH', 'DM'].map((col) => (
+                <option key={col} value={col}>
+                  {col}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div>
+              <label className="block text-sm font-medium mb-2">Group By Column</label>
+              <select
+                value={config.groupBy[0] || ""}
+                onChange={(e) => setConfig({ ...config, groupBy: e.target.value ? [e.target.value] : [] })}
+                className="w-full px-4 py-2 border rounded disabled:bg-gray-100"
+                disabled={config.type === 'number'}
+              >
+                <option value="">Select column</option>
+                {availableColumns.map((col) => (
+                  <option key={col} value={col}>
+                    {col}
+                  </option>
+                ))}
+              </select>
+            </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium mb-2">Operation</label>
           <select
             value={config.operation}
-            onChange={(e) => setConfig({ ...config, operation: e.target.value })}
+            onChange={(e) => {
+              const newOperation = e.target.value;
+              const newConfig = { ...config, operation: newOperation, groupBy: [], valueColumn: null };
+              if (newOperation === 'revenue_loss') {
+                newConfig.type = 'bar'; // Default to bar chart
+              }
+              setConfig(newConfig);
+            }}
             className="w-full px-4 py-2 border rounded"
           >
             <option value="count">Count</option>
             <option value="sum">Sum</option>
             <option value="avg">Average</option>
+            <option value="revenue_loss">Revenue Loss</option>
           </select>
         </div>
 
-        {config.operation !== 'count' && (
+        {config.operation !== 'count' && config.operation !== 'revenue_loss' && (
           <div>
             <label className="block text-sm font-medium mb-2">Value Column</label>
             <select
@@ -342,52 +398,65 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
             <select
               value={filterColumn}
               onChange={(e) => {
-                setFilterColumn(e.target.value)
-                setFilterValue('')
+                setFilterColumn(e.target.value);
+                setFilterValue('');
+                setMultiFilterValues(new Set());
               }}
-              className="flex-1 px-4 py-2 border rounded"
+              className="w-full px-4 py-2 border rounded"
             >
-              <option value="">Select column</option>
+              <option value="">Select column to filter by</option>
               {availableColumns.map((col) => (
                 <option key={col} value={col}>
                   {col}
                 </option>
               ))}
             </select>
-            {filterColumn ? (
-              <select
-                value={filterValue}
-                onChange={(e) => setFilterValue(e.target.value)}
-                className="flex-1 px-4 py-2 border rounded"
-              >
-                <option value="">Select value</option>
-                {filterValueOptions.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                value={filterValue}
-                placeholder="Value"
-                className="flex-1 px-4 py-2 border rounded"
-                disabled
-              />
-            )}
-            <button
-              onClick={handleAddFilter}
-              className="px-4 py-2 bg-blue-500 text-white rounded"
-            >
-              Add
-            </button>
           </div>
+
+          {filterColumn && (
+            <div className="mb-2">
+              {filterColumn === 'Status' ? (
+                <div className="border p-2 rounded-md max-h-40 overflow-y-auto">
+                  <label className="block text-sm font-medium mb-1">Select Statuses:</label>
+                  {filterValueOptions.map((opt) => (
+                    <div key={opt} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`filter-opt-${opt}`}
+                        checked={multiFilterValues.has(opt)}
+                        onChange={(e) => handleMultiFilterChange(opt, e.target.checked)}
+                        className="mr-2"
+                      />
+                      <label htmlFor={`filter-opt-${opt}`}>{opt}</label>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <select
+                  value={filterValue}
+                  onChange={(e) => setFilterValue(e.target.value)}
+                  className="w-full px-4 py-2 border rounded"
+                >
+                  <option value="">Select value</option>
+                  {filterValueOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          <button onClick={handleAddFilter} className="w-full px-4 py-2 bg-blue-500 text-white rounded mb-2" disabled={!filterColumn}>
+            Add Filter
+          </button>
+          
           <div className="flex flex-wrap gap-2">
             {Object.entries(config.filters).map(([key, value]) => (
               <span
                 key={key}
                 className="px-3 py-1 bg-gray-200 rounded flex items-center gap-2"
               >
-                {key}: {value}
+                {key}: {Array.isArray(value) ? `[${value.join(', ')}]` : value}
                 <button
                   onClick={() => handleRemoveFilter(key)}
                   className="text-red-500 hover:text-red-700"
@@ -408,6 +477,11 @@ function WidgetCreator({ onAddWidget, openColumns, releaseColumns, initialConfig
 
         <div className="mt-4">
           <h4 className="font-medium mb-2">Preview</h4>
+          {previewData?.warning && (
+            <div className="mb-4 text-yellow-800 p-3 bg-yellow-200 border border-yellow-500 rounded-md">
+              <strong>Warning:</strong> {previewData.warning}
+            </div>
+          )}
           {renderChart()}
                       {initialConfig ? (
                       <div className="flex gap-2 mt-4">

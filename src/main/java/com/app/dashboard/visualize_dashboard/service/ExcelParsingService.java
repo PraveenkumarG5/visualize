@@ -123,6 +123,7 @@ public class ExcelParsingService {
                     currentRow.put(columns.get(i), "");
                 }
                 if (!currentRow.isEmpty() || !columns.isEmpty()) {
+                    currentRow.put("__row_number__", rowNum + 1);
                     rows.add(currentRow);
                 }
             }

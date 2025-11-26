@@ -249,6 +249,17 @@ function Widget({ config, onRemove, onEdit, onUpdate }) {
           )}
         </h4>
         <div className="flex items-center gap-2">
+          {data?.warning && (
+            <div className="relative group">
+              <span className="text-yellow-500 cursor-help text-lg">⚠️</span>
+              <div 
+                className="absolute bottom-full right-0 mb-2 w-72 bg-gray-800 text-white text-xs rounded py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50"
+                style={{ pointerEvents: 'none' }}
+              >
+                {data.warning}
+              </div>
+            </div>
+          )}
           {onEdit && (
             <button
               onClick={(e) => {

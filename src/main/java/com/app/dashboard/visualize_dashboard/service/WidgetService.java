@@ -23,7 +23,7 @@ public class WidgetService {
     public WidgetPreviewResponse previewWidget(WidgetConfig config) {
         // Get data based on data source
         List<Map<String, Object>> data = fileService.getData(config.getDataSource());
-        
+
         // Apply filters
         List<Map<String, Object>> filteredData = aggregationService.filter(data, config.getFilters());
         
@@ -48,6 +48,10 @@ public class WidgetService {
             
             response.setLabels(labels != null ? labels : List.of());
             response.setValues(values != null ? values : List.of());
+        }
+
+        if (aggregated.containsKey("warning")) {
+            response.setWarning((String) aggregated.get("warning"));
         }
         
         response.setRawData(filteredData);
