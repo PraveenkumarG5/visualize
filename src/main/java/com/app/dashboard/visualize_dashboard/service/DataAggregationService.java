@@ -313,11 +313,15 @@ public class DataAggregationService {
     }
 
     private Object getIgnoreCase(Map<String, Object> map, String key) {
+        logger.debug("getIgnoreCase: Searching for key '{}'. Available keys: {}", key, map.keySet());
         for (Map.Entry<String, Object> entry : map.entrySet()) {
+            logger.debug("getIgnoreCase: Comparing map key '{}' with search key '{}'", entry.getKey(), key);
             if (entry.getKey().trim().equalsIgnoreCase(key)) {
+                logger.debug("getIgnoreCase: Match found for key '{}'", key);
                 return entry.getValue();
             }
         }
+        logger.warn("getIgnoreCase: No match found for key '{}' in map with keys {}", key, map.keySet());
         return null;
     }
 }
