@@ -172,7 +172,8 @@ public class DataAggregationService {
         DateTimeFormatter.ofPattern("d-M-yyyy"),
         DateTimeFormatter.ofPattern("dd-MM-yyyy"),
         DateTimeFormatter.ofPattern("yyyy-MM-dd"),
-        DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
+        DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH),
+        DateTimeFormatter.ofPattern("d-MMM-yy", Locale.ENGLISH)
     );
 
     private LocalDate parseDate(String dateStr) {
