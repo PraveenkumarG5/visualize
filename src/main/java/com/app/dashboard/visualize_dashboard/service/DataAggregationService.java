@@ -112,7 +112,7 @@ public class DataAggregationService {
         return data.stream()
             .filter(row -> {
                 for (Map.Entry<String, Object> filter : filters.entrySet()) {
-                    Object rowValue = row.get(filter.getKey());
+                    Object rowValue = getIgnoreCase(row, filter.getKey());
                     Object filterValue = filter.getValue();
                     
                     if (filterValue == null || filterValue.toString().trim().isEmpty()) {
@@ -157,7 +157,7 @@ public class DataAggregationService {
         }
 
         return data.stream()
-                .map(row -> row.get(column))
+                .map(row -> getIgnoreCase(row, column))
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
