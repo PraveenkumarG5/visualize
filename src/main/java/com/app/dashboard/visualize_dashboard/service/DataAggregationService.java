@@ -251,8 +251,8 @@ public class DataAggregationService {
     }
 
     private double calculateRowLoss(Map<String, Object> row, List<Integer> invalidRowNumbers) {
-        Object billDateObj = row.get("Expected Billing start date");
-        Object billRateObj = row.get("Bill Rate");
+        Object billDateObj = getIgnoreCase(row, "Expected Billing start date");
+        Object billRateObj = getIgnoreCase(row, "Bill Rate");
         Integer rowNum = (Integer) row.get("__row_number__");
 
         if (billDateObj == null || billDateObj.toString().trim().isEmpty()) {
@@ -310,5 +310,14 @@ public class DataAggregationService {
                                 "Data is missing or invalid for rows: " + rowNumbersString);
             result.put("invalidRowNumbers", sortedUniqueInvalidRows);
         }
+    }
+
+    private Object getIgnoreCase(Map<String, Object> map, String key) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            if (entry.getKey().trim().equalsIgnoreCase(key)) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 }
