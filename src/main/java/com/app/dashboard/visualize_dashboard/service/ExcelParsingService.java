@@ -143,7 +143,7 @@ public class ExcelParsingService {
             }
 
             if (isHeaderRow) {
-                String baseHeader = formattedValue.trim();
+                String baseHeader = formattedValue.replaceAll("\\s+", " ").trim();
                 int count = headerNameCounts.getOrDefault(baseHeader, 0);
                 headerNameCounts.put(baseHeader, count + 1);
                 String uniqueHeader = baseHeader;
