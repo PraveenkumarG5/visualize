@@ -1,0 +1,421 @@
+Enterprise JWT Authentication using RS256 (Spring Boot 3 + Spring Security 6 + Java 21)
+Objective
+
+Design and implement a centralized JWT Authentication Service as a separate Spring Boot application.
+
+The authentication service should:
+
+Generate RSA Public/Private Key Pair.
+Sign JWT using RS256.
+Expose Login API.
+Generate JWT valid for 60 minutes.
+Expose Public Key/JWKS endpoint (optional but recommended).
+Never expose the private key.
+
+Spring Batch applications should:
+
+Never generate JWT.
+Never have access to the private key.
+Only validate JWT signature and expiry.
+Reject expired or tampered JWTs.
+Architecture
+                     Azure Key Vault
+                  ---------------------
+                  | Private Key       |
+                  | Public Key        |
+                  ---------------------
+                          |
+                          |
+                 JWT Authentication Service
+                (Spring Boot 3 Application)
+                          |
+                     Generate JWT
+                    (RS256 Signature)
+                          |
+-------------------------------------------------------------
+|                        |                                |
+|                        |                                |
+Spring Batch A      Spring Batch B               Spring Boot API
+Validate JWT        Validate JWT                 Validate JWT
+(using Public Key)  (using Public Key)           (using Public Key)
+Technology Stack
+Java 21
+Spring Boot 3.x
+Spring Security 6
+Spring Batch 5
+jjwt 0.12.x
+Maven
+RSA 2048-bit
+RS256 Algorithm
+Step 1 – Generate RSA Key Pair
+
+Generate 2048-bit RSA keys.
+
+Windows (OpenSSL)
+openssl genrsa -out private.pem 2048
+
+openssl rsa \
+-in private.pem \
+-pubout \
+-out public.pem
+
+Output
+
+private.pem
+public.pem
+Step 2 – Store Keys
+
+Development
+
+src/main/resources/keys/private.pem
+src/main/resources/keys/public.pem
+
+Production
+
+Private Key
+
+Azure Key Vault
+
+Public Key
+
+Azure Key Vault or
+
+src/main/resources/public.pem
+
+Never commit private.pem into Git.
+
+Step 3 – Create JWT Authentication Service
+
+Create a Spring Boot application.
+
+Modules
+
+controller
+service
+config
+security
+util
+dto
+exception
+Step 4 – Dependencies
+
+Include
+
+spring-boot-starter-web
+spring-boot-starter-security
+jjwt-api
+jjwt-impl
+jjwt-jackson
+Step 5 – Load RSA Keys
+
+Create utility class
+
+KeyLoader
+
+Responsibilities
+
+Read private.pem
+Read public.pem
+Convert into
+PrivateKey
+PublicKey
+
+using Java Security APIs.
+
+Step 6 – JWT Service
+
+Create
+
+JwtService
+
+Methods
+
+generateToken()
+
+validateToken()
+
+extractUsername()
+
+extractClaims()
+
+Use
+
+RS256
+
+Generate claims
+
+sub
+
+iat
+
+exp
+
+iss
+
+roles
+
+Expiry
+
+60 Minutes
+Step 7 – Login API
+
+POST
+
+/auth/login
+
+Input
+
+{
+  "username":"admin",
+  "password":"password"
+}
+
+Validate credentials.
+
+Generate JWT.
+
+Response
+
+{
+   "token":"eyJhbGciOiJSUzI1NiIs..."
+}
+Step 8 – Public Key Endpoint
+
+Create endpoint
+
+GET /auth/public-key
+
+Returns
+
+-----BEGIN PUBLIC KEY-----
+.....
+-----END PUBLIC KEY-----
+
+Alternative
+
+Expose
+
+GET /.well-known/jwks.json
+
+for enterprise implementation.
+
+Step 9 – Spring Batch Application
+
+Spring Batch never generates JWT.
+
+Load only
+
+public.pem
+
+Never load
+
+private.pem
+Step 10 – JWT Validation
+
+Create
+
+JwtValidator
+
+Responsibilities
+
+Validate
+
+Signature
+Expiry
+Issuer
+Not Before (optional)
+
+Reject
+
+Expired token
+Invalid signature
+Malformed JWT
+Wrong issuer
+Step 11 – Security Filter
+
+Create
+
+JwtAuthenticationFilter
+
+Steps
+
+Read
+
+Authorization
+
+Bearer xxxxx
+
+Extract JWT
+
+Validate JWT
+
+If valid
+
+Continue request
+
+Else
+
+Return
+
+401 Unauthorized
+Step 12 – Security Configuration
+
+Configure
+
+SecurityFilterChain
+
+Protect
+
+/batch/**
+
+Permit
+
+/health
+
+Disable
+
+CSRF
+
+Stateless Session
+
+Step 13 – JWT Claims
+
+Include
+
+sub
+
+iss
+
+aud
+
+iat
+
+exp
+
+roles
+
+userId
+Step 14 – Exception Handling
+
+Return
+
+401 Unauthorized
+
+For
+
+Expired token
+
+Invalid signature
+
+Malformed JWT
+
+Wrong issuer
+
+Step 15 – Environment Configuration
+
+DEV
+
+Private Key
+
+Azure Key Vault DEV
+
+Public Key
+
+Azure Key Vault DEV
+
+QA
+
+Different RSA Key Pair
+
+UAT
+
+Different RSA Key Pair
+
+PROD
+
+Different RSA Key Pair
+
+Never reuse keys across environments.
+
+Step 16 – Key Rotation
+
+Support
+
+Old Public Key
+
+New Public Key
+
+Authentication Service signs with new Private Key.
+
+Validators should temporarily trust both public keys until all old tokens expire (for example, after 60 minutes).
+
+Step 17 – Logging
+
+Never log
+
+JWT
+
+Private Key
+
+Password
+
+Log only
+
+Username
+
+Issued Time
+
+Expiry Time
+
+Issuer
+Step 18 – Unit Tests
+
+Test
+
+JWT Generation
+
+JWT Validation
+
+Expired JWT
+
+Tampered JWT
+
+Wrong Public Key
+
+Wrong Issuer
+
+Invalid Signature
+
+Step 19 – Integration Tests
+
+Test
+
+Login
+
+Receive JWT
+
+Call Batch API
+
+JWT Valid
+
+200 OK
+
+Expired JWT
+
+401
+
+Modified JWT
+
+401
+
+Best Practices
+Use RS256, not HS256, for enterprise systems.
+Store the private key only in Azure Key Vault (or another secure secrets manager).
+Share only the public key with validating applications.
+Use one RSA key pair per environment (Dev, QA, UAT, Prod).
+Set JWT validity to 60 minutes.
+Validate signature, issuer, expiration, and optionally audience.
+Use HTTPS for all communication between the authentication service and client applications.
+Consider exposing a JWKS endpoint if multiple services need to validate JWTs or if automated key rotation is required.
+
+This design is scalable, secure, and aligns with common enterprise patterns for Spring Boot microservices and Spring Batch applications.
